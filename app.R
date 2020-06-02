@@ -14,9 +14,11 @@ library(shinythemes)
 
 # Package for data manipulation
 library(tidyverse)
+library(vegan)
 
 # Define UI for application that draws a histogram
-ui <- fluidPage(# Application title
+ui <- fluidPage(
+    # Application title
     theme = shinytheme('flatly'),
     titlePanel("RDA (Redundancy analysis) with step selection"),
     h4('WIP yet'),
@@ -24,19 +26,53 @@ ui <- fluidPage(# Application title
     # Sidebar with a slider input for number of bins
     sidebarLayout(
         sidebarPanel(
+            p(
+                'The species and environment matrice must be formatted as right side.'
+            ),
             fileInput('df_com',
                       'Please upload Species Matrix'),
             fileInput('df_env',
-                      'Please uploda Environment Matrix')
+                      'Please uploda Environment Matrix'),
+            selectInput(
+                'full_scale',
+                'Do you want to scale the matrice?
+                If you select TRUE, the observation with missing value in matrice will be removed.',
+                choices = c(TRUE, FALSE)
+            ),
+            selectInput(
+                'select_direction',
+                'The mode of stepwise search',
+                choices = c("both", "backward", "forward"),
+                selected = 'backward'
+            ),
+            sliderInput(
+                'select_perm_max',
+                'Permutation times',
+                min = 999,
+                max = 9999,
+                value = 999,
+                step = 5000
+            )
+            # selectInput(
+            #     'select_trace',
+            #     'Do you want to check the information during the model building? (Where the 0 means show the final model only)',
+            #     choices = c(TRUE, FALSE),
+            #     selected = 0
+            # )
         ),
         mainPanel(tabsetPanel(
             tabPanel(
                 'Species & Environment Matrix',
                 DTOutput('df_com'),
                 DTOutput('df_env')
-            )
+            ),
+            tabPanel('RDA wihout Selection',
+                     verbatimTextOutput('rda_full')),
+            tabPanel('RDA with Selection',
+                     verbatimTextOutput('rda_selection'))
         ))
-    ))
+    )
+)
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
@@ -56,23 +92,71 @@ server <- function(input, output) {
     })
     output$df_com <- renderDataTable({
         if (df_com() == "") {
-            tribble( ~ spe_A, ~ spe_B,
-                     1, 2,
-                     3, 4)
+            tribble(~ spe_A, ~ spe_B,
+                    1, 2,
+                    3, 4)
         } else {
             df_com()
         }
     })
     output$df_env <- renderDataTable({
         if (df_env() == "") {
-            tribble( ~ env_A, ~ env_B,
-                     1, 2,
-                     3, 4)
+            tribble(~ env_A, ~ env_B,
+                    1, 2,
+                    3, 4)
         } else {
             df_env()
         }
     })
     
+    rct_rda_full <- reactive({
+        if (df_com() == "") {
+            return('Please Upload Species Matrice')
+        }
+        if (df_env() == "") {
+            return('Please Upload Environment Matrice')
+        }
+        
+        if (input$full_scale) {
+            rda(
+                df_com() ~ .,
+                data = df_env(),
+                na.action = na.omit,
+                scale = TRUE
+            )
+        } else {
+            rda(df_com() ~ .,
+                data = df_env())
+        }
+    })
+    
+    output$rda_full <-
+        renderPrint({
+            rct_rda_full()
+        })
+    
+    rct_rda_selection <-
+        reactive({
+            if (df_com() == "") {
+                return('Please Upload Species Matrice')
+            }
+            if (df_env() == "") {
+                return('Please Upload Environment Matrice')
+            }
+            if (input$select_direction == 'backward') {
+                rct_rda_full() %>%
+                    ordistep(direction = input$select_direction,
+                             perm.max = input$select_perm_max,
+                             trace = 0)
+            } else {
+                return('WIP')
+            }
+        })
+    
+    output$rda_selection <-
+        renderPrint({
+            rct_rda_selection()
+        })
 }
 
 # Run the application
