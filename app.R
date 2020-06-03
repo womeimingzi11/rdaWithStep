@@ -20,10 +20,17 @@ library(vegan)
 ui <- fluidPage(
     # Application title
     theme = shinytheme('flatly'),
-    titlePanel("RDA (Redundancy analysis) with step selection"),
-    h4('WIP yet'),
-    p('What is RDA with step selection?'),
-    # Sidebar with a slider input for number of bins
+    titlePanel("RDA (Redundancy analysis) with Step Selection (WIP yet)"),
+    h4('Creator: ',
+       a(href = "https://womeimingzi11.github.io", 'Han Chen',
+         .noWS = 'outside')),
+    h5(a(href = "mailto://chenhan28@gmail.com", 'chenhan28@gmail.com',
+         .noWS = 'outside')),
+    h3('What is RDA with step selection?'),
+    p('Briefly, the Monte Carlo permutation tests followed by backward, forward or bothward selection were used to determine which variable was contained in each variable set.'),
+    p('For more information, please refer to the function ',
+      a(href = "https://www.rdocumentation.org/packages/vegan/versions/2.4-2/topics/ordistep", 'vegan::ordistep',
+        .noWS = 'outside')),
     sidebarLayout(
         sidebarPanel(
             p(
@@ -67,8 +74,7 @@ ui <- fluidPage(
                 DTOutput('df_env')
             ),
             tabPanel('RDA wihout Selection',
-                     verbatimTextOutput('rda_full'),
-                     DTOutput('envfit_full')),
+                     verbatimTextOutput('rda_full')),
             tabPanel('RDA with Selection',
                      verbatimTextOutput('rda_selection'))
         ))
@@ -95,18 +101,18 @@ server <- function(input, output) {
     })
     output$df_com <- renderDataTable({
         if (df_com() == "") {
-            tribble(~ spe_A, ~ spe_B,
-                    1, 2,
-                    3, 4)
+            tribble( ~ spe_A, ~ spe_B,
+                     1, 2,
+                     3, 4)
         } else {
             df_com()
         }
     })
     output$df_env <- renderDataTable({
         if (df_env() == "") {
-            tribble(~ env_A, ~ env_B,
-                    1, 2,
-                    3, 4)
+            tribble( ~ env_A, ~ env_B,
+                     1, 2,
+                     3, 4)
         } else {
             df_env()
         }
@@ -135,53 +141,9 @@ server <- function(input, output) {
         }
     })
     
-    rct_envfit_full <- 
-        reactive({
-            if (df_com() == "") {
-                return('Please Upload Species Matrice')
-            }
-            if (df_env() == "") {
-                return('Please Upload Environment Matrice')
-            }
-            envfit(df_com(), df_env(), na.rm = input$full_scale)
-        })
-
-    # Here, env_obj indicates the result of envfit. In this case, it's the res_envfit.
-    # r2_dig is the significant figure of R2
-    # p_dig is the significant figure of p value
-    rct_envfit_to_df_full <-
-        reactive({
-            r2_fmt <- as.character(paste('%.', 6, 'f', sep = ''))
-            p_fmt <- as.character(paste('%.', 3, 'f', sep = ''))
-            
-            tibble(
-                # the name of explainary variables
-                factor = names(rct_envfit_full()$vectors$r),
-                # list or vector of R2
-                r2 = rct_envfit_full()$vectors$r,
-                # list or vector of p values
-                pvals = rct_envfit_full()$vectors$pvals
-            ) %>%
-                # generate significant levels by p values
-                mutate(sig = case_when(
-                    pvals <= 0.001 ~ '***',
-                    pvals <= 0.01 ~ '**',
-                    pvals <= 0.05 ~ '*',
-                    TRUE ~ ' '
-                )) %>%
-                # format the significant figure by format definition before.
-                mutate(pvals = sprintf('%.3f', pvals),
-                       r2 = sprintf(r2_fmt, r2))
-            
-        })
-        
     output$rda_full <-
         renderPrint({
             rct_rda_full()
-        })
-    output$envfit_full <-
-        renderPrint({
-            rct_envfit_to_df_full
         })
     
     rct_rda_selection <-
@@ -194,11 +156,38 @@ server <- function(input, output) {
             }
             if (input$select_direction == 'backward') {
                 rct_rda_full() %>%
-                    ordistep(direction = input$select_direction,
-                             perm.max = input$select_perm_max,
-                             trace = 0)
+                    ordistep(
+                        direction = input$select_direction,
+                        perm.max = input$select_perm_max,
+                        trace = 0
+                    )
             } else {
-                return('WIP')
+                if (input$full_scale) {
+                    rda_null <-
+                        rda(
+                            df_com() ~ 1,
+                            data = df_env(),
+                            na.action = na.omit,
+                            scale = TRUE
+                        ) %>%
+                        ordistep(
+                            scope = formula(rct_rda_full()),
+                            direction = input$select_direction,
+                            perm.max = input$select_perm_max,
+                            trace = 0
+                        )
+                } else {
+                    rda_null <-
+                        rda(df_com() ~ 1,
+                            data = df_env()) %>%
+                        ordistep(
+                            scope = formula(rct_rda_full()),
+                            direction = input$select_direction,
+                            perm.max = input$select_perm_max,
+                            trace = 0
+                        )
+                }
+                
             }
         })
     
