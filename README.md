@@ -1,6 +1,8 @@
 # rdaWithStep
 A shiny app to perform RDA with variable selection and create awesome figures and tables.
 
+The Shiny App was hosted at [Shinyapps.io](https://hanchen.shinyapps.io/rdaWithStep/).
+
 ## Wha is RDA with step selection?
 
 Briefly, the Monte Carlo permutation tests followed by backward, forward or bothward selection were used to determine which variable was contained in each variable set.
@@ -11,4 +13,12 @@ As [vegan::ordistep](https://www.rdocumentation.org/packages/vegan/versions/2.4-
 
 > Function ordistep defines the model, scope of models considered, and direction of the procedure similarly as step. The function alternates with drop and add steps and stops when the model was not changed during one step. The - and + signs in the summary table indicate which stage is performed. It is often sensible to have Pout > Pin in stepwise models to avoid cyclic adds and drops of single terms
 
-The Shiny App was hosted at [Shinyapps.io](https://hanchen.shinyapps.io/rdaWithStep/).
+## Features
+- [x] Reveal Input Matrice
+- [x] Perform RDA
+  - [x] RDA without Selection
+  - [x] RDA with Selection
+- [ ] Variable Significance
+  - [ ] Monte Carlo permutation test
+  - [ ] Significance Table
+- [ ] RDA plot
