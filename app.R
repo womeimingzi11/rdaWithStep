@@ -27,7 +27,7 @@ ui <- fluidPage(
     sidebarLayout(
         sidebarPanel(
             p(
-                'The species and environment matrice must be formatted as right side.'
+                'The species and environment matrice must be formatted as the right side.'
             ),
             fileInput('df_com',
                       'Please upload Species Matrix'),
@@ -47,7 +47,7 @@ ui <- fluidPage(
             ),
             sliderInput(
                 'select_perm_max',
-                'Permutation times',
+                'Permutation times (higher may be more stable and accurate, but will take more time)',
                 min = 999,
                 max = 9999,
                 value = 999,
@@ -67,7 +67,8 @@ ui <- fluidPage(
                 DTOutput('df_env')
             ),
             tabPanel('RDA wihout Selection',
-                     verbatimTextOutput('rda_full')),
+                     verbatimTextOutput('rda_full'),
+                     DTOutput('envfit_full')),
             tabPanel('RDA with Selection',
                      verbatimTextOutput('rda_selection'))
         ))
@@ -76,6 +77,8 @@ ui <- fluidPage(
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+    # Reveal the data frame secton
+    
     df_com <- reactive({
         if (is.null(input$df_com)) {
             return("")
@@ -109,6 +112,8 @@ server <- function(input, output) {
         }
     })
     
+    # Perform RDA analysis Section
+    
     rct_rda_full <- reactive({
         if (df_com() == "") {
             return('Please Upload Species Matrice')
@@ -130,9 +135,53 @@ server <- function(input, output) {
         }
     })
     
+    rct_envfit_full <- 
+        reactive({
+            if (df_com() == "") {
+                return('Please Upload Species Matrice')
+            }
+            if (df_env() == "") {
+                return('Please Upload Environment Matrice')
+            }
+            envfit(df_com(), df_env(), na.rm = input$full_scale)
+        })
+
+    # Here, env_obj indicates the result of envfit. In this case, it's the res_envfit.
+    # r2_dig is the significant figure of R2
+    # p_dig is the significant figure of p value
+    rct_envfit_to_df_full <-
+        reactive({
+            r2_fmt <- as.character(paste('%.', 6, 'f', sep = ''))
+            p_fmt <- as.character(paste('%.', 3, 'f', sep = ''))
+            
+            tibble(
+                # the name of explainary variables
+                factor = names(rct_envfit_full()$vectors$r),
+                # list or vector of R2
+                r2 = rct_envfit_full()$vectors$r,
+                # list or vector of p values
+                pvals = rct_envfit_full()$vectors$pvals
+            ) %>%
+                # generate significant levels by p values
+                mutate(sig = case_when(
+                    pvals <= 0.001 ~ '***',
+                    pvals <= 0.01 ~ '**',
+                    pvals <= 0.05 ~ '*',
+                    TRUE ~ ' '
+                )) %>%
+                # format the significant figure by format definition before.
+                mutate(pvals = sprintf('%.3f', pvals),
+                       r2 = sprintf(r2_fmt, r2))
+            
+        })
+        
     output$rda_full <-
         renderPrint({
             rct_rda_full()
+        })
+    output$envfit_full <-
+        renderPrint({
+            rct_envfit_to_df_full
         })
     
     rct_rda_selection <-
