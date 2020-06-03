@@ -13,12 +13,23 @@ As [vegan::ordistep](https://www.rdocumentation.org/packages/vegan/versions/2.4-
 
 > Function ordistep defines the model, scope of models considered, and direction of the procedure similarly as step. The function alternates with drop and add steps and stops when the model was not changed during one step. The - and + signs in the summary table indicate which stage is performed. It is often sensible to have Pout > Pin in stepwise models to avoid cyclic adds and drops of single terms
 
+## Focus on species or sample site?
+
+In gerneral, there is two main scopes of RDA:
+
+  1. determine the relationships of species and environment variables only;
+  2. except determine the relationships of species and environment variables, the simple sites were also considered.
+  
+In this case, adding sample sites in the figure is not in my plan yet.
+
+However, you are welcomed to commit any feature about this feature and even any other features.
+
 ## Features
 - [x] Reveal Input Matrice
 - [x] Perform RDA
   - [x] RDA without Selection
   - [x] RDA with Selection
-- [ ] Variable Significance
-  - [ ] Monte Carlo permutation test
-  - [ ] Significance Table
+- [x] Variable Significance
+  - [x] Monte Carlo permutation test
+  - [x] Significance Table
 - [ ] RDA plot

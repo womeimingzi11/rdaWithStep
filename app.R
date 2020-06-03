@@ -6,7 +6,10 @@
 #
 #    http://shiny.rstudio.com/
 #
-
+# To track the development progress, please check:
+#
+#    https://github.com/womeimingzi11/rdaWithStep
+#
 # Package for Shiny
 library(shiny)
 library(DT)
@@ -28,6 +31,8 @@ ui <- fluidPage(
     h5(
         a(href = "mailto://chenhan28@gmail.com", 'chenhan28@gmail.com')
     ),
+    h6('Update version: ',
+       Sys.Date()),
     sidebarLayout(
         sidebarPanel(
             p(
@@ -50,8 +55,16 @@ ui <- fluidPage(
                 selected = 'backward'
             ),
             sliderInput(
-                'select_perm_max',
-                'Permutation times (higher may be more stable and accurate, but will take more time)',
+                'selection_perm_max',
+                'Permutation times of RDA selection (higher may be more stable and accurate, but will take more time)',
+                min = 999,
+                max = 9999,
+                value = 999,
+                step = 5000
+            ),
+            sliderInput(
+                'envfit_p_max',
+                'Permutation times of individual variable significance detection (higher may be more stable and accurate, but will take more time)',
                 min = 999,
                 max = 9999,
                 value = 999,
@@ -70,18 +83,27 @@ ui <- fluidPage(
                 DTOutput('df_com'),
                 DTOutput('df_env')
             ),
-            tabPanel('RDA wihout Selection',
-                     verbatimTextOutput('rda_full')),
-            tabPanel('RDA with Selection',
-                     verbatimTextOutput('rda_selection'))
+            tabPanel(
+                'RDA wihout Selection',
+                verbatimTextOutput('rda_full'),
+                DTOutput('envfit_full')
+            ),
+            tabPanel(
+                'RDA with Selection',
+                verbatimTextOutput('rda_selection'),
+                DTOutput('envfit_selection')
+            )
+            # tabPanel('ENVFIT',
+            #          DTOutput('envfit_full'),
+            #          DTOutput('envfit_selection'))
         ))
     )
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
+    ##############################
     # Reveal the data frame secton
-    
     df_com <- reactive({
         if (is.null(input$df_com)) {
             return("")
@@ -114,7 +136,7 @@ server <- function(input, output) {
             df_env()
         }
     })
-    
+    #############################
     # Perform RDA without Section
     rct_rda_full <- reactive({
         if (df_com() == "") {
@@ -146,7 +168,7 @@ server <- function(input, output) {
         renderPrint({
             rct_rda_full()
         })
-    
+    ############################
     # Perform RDA with Selection
     rct_rda_selection <-
         reactive({
@@ -162,7 +184,7 @@ server <- function(input, output) {
                 rct_rda_full() %>%
                     ordistep(
                         direction = input$select_direction,
-                        perm.max = input$select_perm_max,
+                        perm.max = input$selection_perm_max,
                         trace = 0
                     )
                 
@@ -183,7 +205,7 @@ server <- function(input, output) {
                         ordistep(
                             scope = formula(rct_rda_full()),
                             direction = input$select_direction,
-                            perm.max = input$select_perm_max,
+                            perm.max = input$selection_perm_max,
                             trace = 0
                         )
                 } else {
@@ -192,7 +214,7 @@ server <- function(input, output) {
                         ordistep(
                             scope = formula(rct_rda_full()),
                             direction = input$select_direction,
-                            perm.max = input$select_perm_max,
+                            perm.max = input$selection_perm_max,
                             trace = 0
                         )
                 }
@@ -204,6 +226,80 @@ server <- function(input, output) {
         renderPrint({
             rct_rda_selection()
         })
+    ############################
+    # Perform permutation test
+    # to detect the significant
+    # environment variables
+    
+    # Because the envfit can not be output as matrix or data.frame directly,
+    # we should convert envfit as data.frame,
+    # generally we consider the first two axes of RDA.
+    # Therefore, we choose the first two axes of envfit
+    # Here, env_obj indicates the result of envfit. In this case, it's the res_envfit.
+    # r2_dig is the significant figure of R2
+    # p_dig is the significant figure of p value
+    envfit_to_df <- function(env_obj,
+                             r2_dig = 6,
+                             p_dig = 3) {
+        r2_fmt <- as.character(paste('%.', r2_dig, 'f', sep = ''))
+        p_fmt <- as.character(paste('%.', p_dig, 'f', sep = ''))
+        tibble(
+            # the name of explainary variables
+            factor = names(env_obj$vectors$r),
+            # list or vector of R2
+            r2 = env_obj$vectors$r,
+            # list or vector of p values
+            pvals = env_obj$vectors$pvals
+        ) %>%
+            # generate significant levels by p values
+            mutate(sig = case_when(
+                pvals <= 0.001 ~ '***',
+                pvals <= 0.01 ~ '**',
+                pvals <= 0.05 ~ '*',
+                TRUE ~ ' '
+            )) %>%
+            # format the significant figure by format definition before.
+            mutate(pvals = sprintf('%.3f', pvals),
+                   r2 = sprintf(r2_fmt, r2))
+    }
+    
+    
+    ## ENVFIT to FULL Model
+    rct_envfit_full <-
+        reactive({
+            envfit(formula(rct_rda_full()),
+                   data = df_env(),
+                   p.max = input$envfit_p_max)
+        })
+    output$envfit_full <-
+        renderDataTable({
+            rct_envfit_full() %>%
+                envfit_to_df(r2_dig = 3)
+        },
+        extensions = 'Buttons',
+        options = list(
+            dom = 'Bfrtip',
+            buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+        ))
+    ## ENVFIT to SELECTED Model
+    rct_envfit_selection <-
+        reactive({
+            envfit(
+                formula(rct_rda_selection()),
+                data = df_env(),
+                p.max = input$envfit_p_max
+            )
+        })
+    output$envfit_selection <-
+        renderDataTable({
+            rct_envfit_selection() %>%
+                envfit_to_df(r2_dig = 3)
+        },
+        extensions = 'Buttons',
+        options = list(
+            dom = 'Bfrtip',
+            buttons = c('copy', 'csv', 'excel', 'pdf', 'print')
+        ))
 }
 
 # Run the application
