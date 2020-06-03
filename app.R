@@ -123,8 +123,7 @@ server <- function(input, output) {
         }
     })
     
-    # Perform RDA analysis Section
-    
+    # Perform RDA without Section
     rct_rda_full <- reactive({
         if (df_com() == "") {
             return('Please Upload Species Matrice')
@@ -132,25 +131,31 @@ server <- function(input, output) {
         if (df_env() == "") {
             return('Please Upload Environment Matrice')
         }
-        
-        if (input$full_scale) {
+        ## Determine whether scale data or not,
+        ## becasuse NA can't be scaled, once select scale,
+        ## NA must be omit by na.action = na.omit
+        if (input$rda_scale) {
             rda(
                 df_com() ~ .,
                 data = df_env(),
                 na.action = na.omit,
                 scale = TRUE
             )
+            ## If the data don't have to scale
+            ## there is no need to omit NA value
         } else {
             rda(df_com() ~ .,
                 data = df_env())
         }
     })
     
+    # Reveal the result of RDA without Selection
     output$rda_full <-
         renderPrint({
             rct_rda_full()
         })
     
+    # Perform RDA with Selection
     rct_rda_selection <-
         reactive({
             if (df_com() == "") {
@@ -159,15 +164,24 @@ server <- function(input, output) {
             if (df_env() == "") {
                 return('Please Upload Environment Matrice')
             }
+            ## If the backwad was selected, there is only need the RDA with all variables
+            ## The rct_rda_full() was enought to be selected.
             if (input$select_direction == 'backward') {
                 rct_rda_full() %>%
                     ordistep(
                         direction = input$select_direction,
                         perm.max = input$select_perm_max,
                         trace = 0
-                    ) %>% return()
+                    )
+                
+                ## For bothward selection and forward selection
+                ## We have to create a RDA model with no variable as predict varibale.
+                ## y ~ 1 is the formula for null model
+                ## ATTENTION: if your full model was scaled,
+                ## the same method was also needed to be used at creating null model.
+                ## Therefore, we should detect wether scale is needed or not.
             } else {
-                if (input$full_scale) {
+                if (input$rda_scale) {
                     rda(
                         df_com() ~ 1,
                         data = df_env(),
