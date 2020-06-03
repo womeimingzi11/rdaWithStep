@@ -21,16 +21,21 @@ ui <- fluidPage(
     # Application title
     theme = shinytheme('flatly'),
     titlePanel("RDA (Redundancy analysis) with Step Selection (WIP yet)"),
-    h4('Creator: ',
-       a(href = "https://womeimingzi11.github.io", 'Han Chen',
-         .noWS = 'outside')),
-    h5(a(href = "mailto://chenhan28@gmail.com", 'chenhan28@gmail.com',
-         .noWS = 'outside')),
+    h4(
+        'Creator:',
+        a(href = "https://womeimingzi11.github.io", 'Han Chen')
+    ),
+    h5(
+        a(href = "mailto://chenhan28@gmail.com", 'chenhan28@gmail.com')
+    ),
     h3('What is RDA with step selection?'),
-    p('Briefly, the Monte Carlo permutation tests followed by backward, forward or bothward selection were used to determine which variable was contained in each variable set.'),
-    p('For more information, please refer to the function ',
-      a(href = "https://www.rdocumentation.org/packages/vegan/versions/2.4-2/topics/ordistep", 'vegan::ordistep',
-        .noWS = 'outside')),
+    p(
+        'Briefly, the Monte Carlo permutation tests followed by backward, forward or bothward selection were used to determine which variable was contained in each variable set.'
+    ),
+    p(
+        'For more information, please refer to the function',
+        a(href = "https://www.rdocumentation.org/packages/vegan/versions/2.4-2/topics/ordistep", 'vegan::ordistep')
+    ),
     sidebarLayout(
         sidebarPanel(
             p(
@@ -160,16 +165,15 @@ server <- function(input, output) {
                         direction = input$select_direction,
                         perm.max = input$select_perm_max,
                         trace = 0
-                    )
+                    ) %>% return()
             } else {
                 if (input$full_scale) {
-                    rda_null <-
-                        rda(
-                            df_com() ~ 1,
-                            data = df_env(),
-                            na.action = na.omit,
-                            scale = TRUE
-                        ) %>%
+                    rda(
+                        df_com() ~ 1,
+                        data = df_env(),
+                        na.action = na.omit,
+                        scale = TRUE
+                    ) %>%
                         ordistep(
                             scope = formula(rct_rda_full()),
                             direction = input$select_direction,
@@ -177,9 +181,8 @@ server <- function(input, output) {
                             trace = 0
                         )
                 } else {
-                    rda_null <-
-                        rda(df_com() ~ 1,
-                            data = df_env()) %>%
+                    rda(df_com() ~ 1,
+                        data = df_env()) %>%
                         ordistep(
                             scope = formula(rct_rda_full()),
                             direction = input$select_direction,
@@ -187,7 +190,6 @@ server <- function(input, output) {
                             trace = 0
                         )
                 }
-                
             }
         })
     
