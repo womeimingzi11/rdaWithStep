@@ -28,14 +28,6 @@ ui <- fluidPage(
     h5(
         a(href = "mailto://chenhan28@gmail.com", 'chenhan28@gmail.com')
     ),
-    h3('What is RDA with step selection?'),
-    p(
-        'Briefly, the Monte Carlo permutation tests followed by backward, forward or bothward selection were used to determine which variable was contained in each variable set.'
-    ),
-    p(
-        'For more information, please refer to the function',
-        a(href = "https://www.rdocumentation.org/packages/vegan/versions/2.4-2/topics/ordistep", 'vegan::ordistep')
-    ),
     sidebarLayout(
         sidebarPanel(
             p(
@@ -46,7 +38,7 @@ ui <- fluidPage(
             fileInput('df_env',
                       'Please uploda Environment Matrix'),
             selectInput(
-                'full_scale',
+                'rda_scale',
                 'Do you want to scale the matrice?
                 If you select TRUE, the observation with missing value in matrice will be removed.',
                 choices = c(TRUE, FALSE)
@@ -207,6 +199,7 @@ server <- function(input, output) {
             }
         })
     
+    # Reveal the result of RDA with Selection
     output$rda_selection <-
         renderPrint({
             rct_rda_selection()
