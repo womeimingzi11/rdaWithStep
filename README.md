@@ -22,7 +22,10 @@ In gerneral, there is two main scopes of RDA:
   
 In this case, adding sample sites in the figure is not in my plan yet.
 
-However, you are welcomed to commit any feature about this feature and even any other features.
+However, you are welcomed to commit any feature about this and even any other features in my [repo on GitHub](https://github.com/womeimingzi11/rdaWithStep).
+
+You are also welcomed to visited my [Blog (in Chinese)](https://womeimingzi11.github.io) or contact me by [mail](mailto://chenhan28@gmail.com).
+
 
 ## Features
 - [x] Reveal Input Matrice
