@@ -36,12 +36,19 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       p(
-        'The species and environment matrice must be formatted as the right side.'
+        'The species and environment matrice must be formatted as the demo.'
       ),
-      fileInput('df_com',
-                'Please upload Species Matrix'),
-      fileInput('df_env',
-                'Please uploda Environment Matrix'),
+      radioButtons('data_source',
+                   'Upload files or try the demo',
+                   choices = c('Upload files' = 'file',
+                               'Try the demo' = 'demo'),
+                   selected = 'demo'),
+      conditionalPanel(condition = "input.data_source == 'file'",
+                       fileInput('df_com',
+                                 'Please upload Species Matrix'),
+                       fileInput('df_env',
+                                 'Please uploda Environment Matrix')
+                       ),
       selectInput(
         'rda_scale',
         'Do you want to scale the matrice?
@@ -151,36 +158,34 @@ server <- function(input, output) {
   ##############################
   # Reveal the data frame secton
   df_com <- reactive({
-    if (is.null(input$df_com)) {
-      return("")
+    if(input$data_source == 'demo'){
+      read_csv('data/df_com_smp.csv')
     } else {
-      read_csv(input$df_com$datapath)
+      if (is.null(input$df_com)) {
+        return("")
+      } else {
+        read_csv(input$df_com$datapath)
+      }
     }
   })
+  
   df_env <- reactive({
-    if (is.null(input$df_env)) {
-      return("")
+    if(input$data_source == 'demo'){
+      read_csv('data/df_env_smp.csv')
     } else {
-      read_csv(input$df_env$datapath)
+      if (is.null(input$df_env)) {
+        return("")
+      } else {
+        read_csv(input$df_env$datapath)
+      } 
     }
   })
+  
   output$df_com <- renderDataTable({
-    if (df_com() == "") {
-      tribble(~ spe_A, ~ spe_B,
-              1, 2,
-              3, 4)
-    } else {
       df_com()
-    }
   })
   output$df_env <- renderDataTable({
-    if (df_env() == "") {
-      tribble(~ env_A, ~ env_B,
-              1, 2,
-              3, 4)
-    } else {
       df_env()
-    }
   })
   #############################
   # Perform RDA without Section
