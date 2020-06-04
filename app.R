@@ -12,9 +12,9 @@
 
 # Package for Shiny
 library(shiny)
-library(DT)
-library(plotly)
 library(shinythemes)
+library(DT)
+# library(plotly)
 
 # Package for data manipulation
 library(tidyverse)
@@ -149,6 +149,10 @@ ui <- fluidPage(
           column(6,
                  plotOutput('fig_rda_selection'))
         )
+      ),
+      tabPanel(
+        'Acknowledgements',
+        includeMarkdown('Acknowledgements.md')
       )
     ))
   )
