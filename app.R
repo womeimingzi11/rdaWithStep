@@ -24,7 +24,7 @@ library(ggvegan)
 ui <- fluidPage(
   # Application title
   theme = shinytheme('flatly'),
-  titlePanel("RDA (Redundancy analysis) with Step Selection (WIP yet)"),
+  titlePanel("RDA (Redundancy analysis) with Step Selection"),
   h4(
     'Creator:',
     a(href = "https://womeimingzi11.github.io", 'Han Chen')
