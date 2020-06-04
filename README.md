@@ -37,6 +37,6 @@ You are also welcomed to visit my [Blog (in Chinese)](https://womeimingzi11.gith
   - [x] Significance Table
 - [x] RDA plot
 
-## Know Issues
+## Known Issues
   1. Figure format and DPI selection don't work yet. So far, It only generates PDF. Generally using PDF as a figure is more delicate than other formats, and there is no need to set DPI for PDF, the vector diagram.
   2. You tell me.
