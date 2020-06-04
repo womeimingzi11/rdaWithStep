@@ -35,4 +35,8 @@ You are also welcomed to visited my [Blog (in Chinese)](https://womeimingzi11.gi
 - [x] Variable Significance
   - [x] Monte Carlo permutation test
   - [x] Significance Table
-- [ ] RDA plot
+- [x] RDA plot
+
+## Know Issues
+  1. Figure format and DPI selection don't work yet. So far, It only generates PDF. Gernerally using PDF as figure is more delicate than other format, and there is no need to set DPI for PDF, the vector diagram.
+  2. You tell me.
