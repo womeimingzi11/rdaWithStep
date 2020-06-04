@@ -9,7 +9,18 @@
 # To track the development progress, please check:
 #
 #    https://github.com/womeimingzi11/rdaWithStep
-# Define UI for application that draws a histogram
+
+# Package for Shiny
+library(shiny)
+library(DT)
+library(plotly)
+library(shinythemes)
+
+# Package for data manipulation
+library(tidyverse)
+library(vegan)
+library(ggvegan)
+
 ui <- fluidPage(
   # Application title
   theme = shinytheme('flatly'),

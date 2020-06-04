@@ -15,7 +15,7 @@ As [vegan::ordistep](https://www.rdocumentation.org/packages/vegan/versions/2.4-
 
 ## Focus on species or sample site?
 
-In gerneral, there is two main scopes of RDA:
+In general, there are two main scopes of RDA:
 
   1. determine the relationships of species and environment variables only;
   2. except determine the relationships of species and environment variables, the simple sites were also considered.
@@ -24,7 +24,7 @@ In this case, adding sample sites in the figure is not in my plan yet.
 
 However, you are welcomed to commit any feature about this and even any other features in my [repo on GitHub](https://github.com/womeimingzi11/rdaWithStep).
 
-You are also welcomed to visited my [Blog (in Chinese)](https://womeimingzi11.github.io) or contact me by [mail](mailto://chenhan28@gmail.com).
+You are also welcomed to visit my [Blog (in Chinese)](https://womeimingzi11.github.io) or contact me by [mail](mailto://chenhan28@gmail.com).
 
 
 ## Features
@@ -38,5 +38,5 @@ You are also welcomed to visited my [Blog (in Chinese)](https://womeimingzi11.gi
 - [x] RDA plot
 
 ## Know Issues
-  1. Figure format and DPI selection don't work yet. So far, It only generates PDF. Gernerally using PDF as figure is more delicate than other format, and there is no need to set DPI for PDF, the vector diagram.
+  1. Figure format and DPI selection don't work yet. So far, It only generates PDF. Generally using PDF as a figure is more delicate than other formats, and there is no need to set DPI for PDF, the vector diagram.
   2. You tell me.
