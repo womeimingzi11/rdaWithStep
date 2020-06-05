@@ -1,7 +1,5 @@
-# rdaWithStep
+## What is rdaWithStep？
 A shiny app to perform RDA with variable selection and create awesome figures and tables.
-
-rdaWithStep is hosted at [Shinyapps.io](https://hanchen.shinyapps.io/rdaWithStep/).
 
 ## Wha is RDA with step selection?
 
@@ -25,36 +23,3 @@ In this case, adding sample sites in the figure is not in my plan yet.
 However, you are welcomed to commit any feature about this and even any other features in my [repo on GitHub](https://github.com/womeimingzi11/rdaWithStep).
 
 You are also welcomed to visit my [Blog (in Chinese)](https://womeimingzi11.github.io) or contact me by [mail](mailto://chenhan28@gmail.com).
-
-## How to use it?
-
-### 1. EZ way
-
-[Click here](https://hanchen.shinyapps.io/rdaWithStep/). rdaWithStep is hosted at [Shinyapps.io](https://Shinyapps.io).
-
-### 2. Hardcore way
-To make sure that you can control everything, you are welcomed to [fork my code](https://github.com/womeimingzi11/rdaWithStep/fork) to your own repo (and leave me a star please).
-
-Then what you can do is to oepn `rdaWithStep.Rproj` file in RStudio, following open `app.R` file, install all the packages which will be loaded.
-
-At the least, click `run.app` at the right top of the code editor panel, **rdaWithStep** will run locally.
-
-![](resource/figure/runApp.png)
-
-
-
-## Features
-- [x] Reveal Input Matrice
-- [x] Perform RDA
-  - [x] RDA without Selection
-  - [x] RDA with Selection
-- [x] Variable Significance
-  - [x] Monte Carlo permutation test
-  - [x] Significance Table
-- [x] RDA plot
-
-## Known Issues
-You tell me.
-
-## Privacy Statements
-We gurantee that all your data won't be kept once you leave the Shiny app. There is no code and won't have any code to record your cilentID, uploaded file or any other data.

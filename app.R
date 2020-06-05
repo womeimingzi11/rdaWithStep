@@ -14,7 +14,6 @@
 library(shiny)
 library(shinythemes)
 library(DT)
-# library(plotly)
 
 # Package for data manipulation
 library(tidyverse)
@@ -32,23 +31,24 @@ ui <- fluidPage(
   h5(
     a(href = "mailto://chenhan28@gmail.com", 'chenhan28@gmail.com')
   ),
-  h6('Update version: 20600604'),
+  h6('Update version: 20600605'),
   sidebarLayout(
     sidebarPanel(
-      p(
-        'The species and environment matrice must be formatted as the demo.'
+      p('The species and environment matrice must be formatted as the demo.'),
+      radioButtons(
+        'data_source',
+        'Upload files or try the demo',
+        choices = c('Upload files' = 'file',
+                    'Try the demo' = 'demo'),
+        selected = 'demo'
       ),
-      radioButtons('data_source',
-                   'Upload files or try the demo',
-                   choices = c('Upload files' = 'file',
-                               'Try the demo' = 'demo'),
-                   selected = 'demo'),
-      conditionalPanel(condition = "input.data_source == 'file'",
-                       fileInput('df_com',
-                                 'Please upload Species Matrix'),
-                       fileInput('df_env',
-                                 'Please uploda Environment Matrix')
-                       ),
+      conditionalPanel(
+        condition = "input.data_source == 'file'",
+        fileInput('df_com',
+                  'Please upload Species Matrix'),
+        fileInput('df_env',
+                  'Please uploda Environment Matrix')
+      ),
       selectInput(
         'rda_scale',
         'Do you want to scale the matrice?
@@ -83,78 +83,80 @@ ui <- fluidPage(
         choices = c(TRUE, FALSE),
         selected = TRUE
       )
-      # selectInput(
-      #     'select_trace',
-      #     'Do you want to check the information during the model building? (Where the 0 means show the final model only)',
-      #     choices = c(TRUE, FALSE),
-      #     selected = 0
-      # )
     ),
-    mainPanel(tabsetPanel(
-      tabPanel('Overview',
-               includeMarkdown('README.md')),
-      tabPanel(
-        'Species & Environment Matrix',
-        DTOutput('df_com'),
-        DTOutput('df_env')
-      ),
-      tabPanel(
-        'RDA wihout Selection',
-        verbatimTextOutput('rda_full'),
-        DTOutput('envfit_full'),
-        fluidRow(
-          column(
-            3,
-            selectInput(
-              'dl_format_full',
-              'Choose the figure format (PDF is recommanded)',
-              choices = c('pdf', 'png', 'jpeg'),
-              selected = 'pdf'
+    mainPanel(
+      tabsetPanel(
+        tabPanel('Overview',
+                 includeMarkdown('resource/page/overview.md')),
+        tabPanel(
+          'Species & Environment Matrix',
+          DTOutput('df_com'),
+          DTOutput('df_env')
+        ),
+        tabPanel(
+          'RDA wihout Selection',
+          verbatimTextOutput('rda_full'),
+          DTOutput('envfit_full'),
+          fluidRow(
+            column(
+              3,
+              selectInput(
+                'dl_format_full',
+                'Choose the figure format (PDF is recommanded)',
+                choices = c('pdf', 'png', 'jpeg'),
+                selected = 'pdf'
+              ),
+              selectInput(
+                'dl_dpi_full',
+                'Choose the DPI (300 DPI is recomanded). PDF is a vector diagram, DPI is not needed for it',
+                choices = c(
+                  '320' = 'retina',
+                  '300' = 'print',
+                  '72' = 'screen'
+                ),
+                selected = 'print'
+              ),
+              downloadButton('dl_rda_full',
+                             'Download Figure')
             ),
-            selectInput(
-              'dl_dpi_full',
-              'Choose the DPI (300 DPI is recomanded). PDF is a vector diagram, DPI is not needed for it',
-              choices = c(72,96,150,300,600),
-              selected = 300
+            column(6,
+                   plotOutput('fig_rda_full'))
+          )
+        ),
+        tabPanel(
+          'RDA with Selection',
+          verbatimTextOutput('rda_selection'),
+          DTOutput('envfit_selection'),
+          fluidRow(
+            column(
+              3,
+              selectInput(
+                'dl_format_selection',
+                'Choose the figure format (PDF is recommanded)',
+                choices = c('pdf', 'png', 'jpeg'),
+                selected = 'pdf'
+              ),
+              selectInput(
+                'dl_dpi_selection',
+                'Choose the DPI (300 DPI is recomanded). PDF is a vector diagram, DPI is not needed for it',
+                choices = c(
+                  '320' = 'retina',
+                  '300' = 'print',
+                  '72' = 'screen'
+                ),
+                selected = 'print'
+              ),
+              downloadButton('dl_rda_selection',
+                             'Download Figure')
             ),
-            downloadButton('dl_rda_full',
-                           'Download Figure')
-          ),
-          column(6,
-                 plotOutput('fig_rda_full'))
-        )
-      ),
-      tabPanel(
-        'RDA with Selection',
-        verbatimTextOutput('rda_selection'),
-        DTOutput('envfit_selection'),
-        fluidRow(
-          column(
-            3,
-            selectInput(
-              'dl_format_selection',
-              'Choose the figure format (PDF is recommanded)',
-              choices = c('pdf', 'png', 'jpeg'),
-              selected = 'pdf'
-            ),
-            selectInput(
-              'dl_dpi_selection',
-              'Choose the DPI (300 DPI is recomanded). PDF is a vector diagram, DPI is not needed for it',
-              choices = c(72,96,150,300,600),
-              selected = 300
-            ),
-            downloadButton('dl_rda_selection',
-                           'Download Figure')
-          ),
-          column(6,
-                 plotOutput('fig_rda_selection'))
-        )
-      ),
-      tabPanel(
-        'Acknowledgements',
-        includeMarkdown('Acknowledgements.md')
+            column(6,
+                   plotOutput('fig_rda_selection'))
+          )
+        ),
+        tabPanel('Acknowledgements & References',
+                 includeMarkdown('resource/page/acknowledgements.md'))
       )
-    ))
+    )
   )
 )
 
@@ -162,8 +164,8 @@ server <- function(input, output) {
   ##############################
   # Reveal the data frame secton
   df_com <- reactive({
-    if(input$data_source == 'demo'){
-      read_csv('data/df_com_smp.csv')
+    if (input$data_source == 'demo') {
+      read_csv('resource/data/df_com_smp.csv')
     } else {
       if (is.null(input$df_com)) {
         return("")
@@ -174,22 +176,22 @@ server <- function(input, output) {
   })
   
   df_env <- reactive({
-    if(input$data_source == 'demo'){
-      read_csv('data/df_env_smp.csv')
+    if (input$data_source == 'demo') {
+      read_csv('resource/data/df_env_smp.csv')
     } else {
       if (is.null(input$df_env)) {
         return("")
       } else {
         read_csv(input$df_env$datapath)
-      } 
+      }
     }
   })
   
   output$df_com <- renderDataTable({
-      df_com()
+    df_com()
   })
   output$df_env <- renderDataTable({
-      df_env()
+    df_env()
   })
   #############################
   # Perform RDA without Section
@@ -333,11 +335,9 @@ server <- function(input, output) {
   rct_fig_rda_full <-
     reactive({
       p <-
-        ggRDA(
-          rda_obj = rct_rda_full(),
-          envfit_df = rct_envfit_full(),
-          sp_size = 5
-        ) +
+        ggRDA(rda_obj = rct_rda_full(),
+              envfit_df = rct_envfit_full(),
+              sp_size = 5) +
         # Generally theme_classic is a good choice to paint a figure
         theme_classic() +
         # In general, we don't need to show the legend in RDA figure
@@ -375,11 +375,9 @@ server <- function(input, output) {
   rct_fig_rda_selection <-
     reactive({
       p <-
-        ggRDA(
-          rda_obj = rct_rda_selection(),
-          envfit_df = rct_envfit_selection(),
-          sp_size = 5
-        ) +
+        ggRDA(rda_obj = rct_rda_selection(),
+              envfit_df = rct_envfit_selection(),
+              sp_size = 5) +
         # Generally theme_classic is a good choice to paint a figure
         theme_classic() +
         # In general, we don't need to show the legend in RDA figure
@@ -417,21 +415,35 @@ server <- function(input, output) {
   
   output$dl_rda_full <-
     downloadHandler(
-      filename = "rda_full.pdf",
-      content = function(file){
-        ggsave(file,
-               plot = rct_fig_rda_full()
-        )
+      filename = function() {
+        paste('rda_full.', input$dl_format_full, sep = '')
+      },
+      content = function(file) {
+        if (input$dl_format_full == 'pdf') {
+          ggsave(file,
+                 plot = rct_fig_rda_full())
+        } else {
+          ggsave(file,
+                 plot = rct_fig_rda_full(),
+                 dpi = input$dl_dpi_full)
+        }
       }
     )
   
   output$dl_rda_selection <-
     downloadHandler(
-      filename = "rda_selection.pdf",
-      content = function(file){
-        ggsave(file,
-               plot = rct_fig_rda_selection()
-        )
+      filename = function() {
+        paste('rda_selection.', input$dl_format_selection, sep = '')
+      },
+      content = function(file) {
+        if (input$dl_format_selection == 'pdf') {
+          ggsave(file,
+                 plot = rct_fig_rda_selection())
+        } else {
+          ggsave(file,
+                 plot = rct_fig_rda_selection(),
+                 dpi = input$dl_dpi_selection)
+        }
       }
     )
 }
