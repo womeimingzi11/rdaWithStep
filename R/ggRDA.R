@@ -4,77 +4,79 @@ ggRDA <-
            sp_size = 4,
            arrow_txt_size = 4,
            envfit_df) {
-    # ggplot doesn't support rda object directly, we use ggvegan::fortify function to convert the rda to data.frame
+    # fortify rda to data.frame
     fmod <- fortify(rda_obj)
-    # to get the arrow of biplot, we plot rda by vegan::plot.rda function firstly.
-    # The arrow attributes contain in the attributes(plot_obejct$biplot)$arrow.mul
+    # get biplot arrow multiplier
     basplot <- plot(rda_obj)
     mult <- attributes(basplot$biplot)$arrow.mul
-    
-    # To check if envfit_df exists or not
-    # If envfit_df exists, join the fortified rda_obj and envfit to mark which variable is significant.
-    if (missingArg(envfit_df)) {
-      bplt_df <- filter(fmod, Score == "biplot") %>%
-        # If there is no requirement to mark significant variable
-        # use the sytle of sinificant (black bolder solid arrow)
-        # to paint the arrow
-        mutate(bold = 'sig')
-    } else {
-      bplt_df <- filter(fmod, Score == "biplot") %>%
-        left_join(envfit_df, by = c('Label' = 'factor')) %>%
-        # To mark the significant variables as sig, not significant variables as ns
-        # these information are stored in bold column
-        mutate(bold = ifelse(str_detect(sig, fixed('*')), 'sig', 'ns'))
+
+    # normalize column names
+    if ("score" %in% names(fmod)) names(fmod)[names(fmod) == "score"] <- "Score"
+    if ("label" %in% names(fmod)) names(fmod)[names(fmod) == "label"] <- "Label"
+
+    # detect axis columns (first two numeric columns) for overall plot
+    f_axes <- names(fmod)[vapply(fmod, is.numeric, logical(1))]
+    if (length(f_axes) < 2) stop("Unable to detect ordination axes from fortify(rda_obj)")
+    f_axis1 <- f_axes[1]
+    f_axis2 <- f_axes[2]
+
+    # subsets
+    fmod_biplot <- dplyr::filter(fmod, Score == "biplot")
+    fmod_species <- dplyr::filter(fmod, Score == "species")
+
+    # base plot
+    p <- ggplot(fmod, aes(x = .data[[f_axis1]], y = .data[[f_axis2]])) +
+      coord_fixed()
+
+    # build arrow data from fortify biplot rows (robust across versions)
+    if (nrow(fmod_biplot) > 0) {
+      arrow_df <- fmod_biplot
+      # detect axis columns in biplot subset to ensure presence
+      bi_axes <- names(arrow_df)[vapply(arrow_df, is.numeric, logical(1))]
+      if (length(bi_axes) >= 2) {
+        bi_axis1 <- bi_axes[1]
+        bi_axis2 <- bi_axes[2]
+        # compute arrow ends and label positions using biplot axes
+        arrow_df$xend <- mult * arrow_df[[bi_axis1]]
+        arrow_df$yend <- mult * arrow_df[[bi_axis2]]
+        arrow_df$x_label <- (mult + mult/10) * arrow_df[[bi_axis1]]
+        arrow_df$y_label <- (mult + mult/10) * arrow_df[[bi_axis2]]
+        # mark significance if envfit_df provided
+        if (missing(envfit_df)) {
+          arrow_df <- dplyr::mutate(arrow_df, bold = 'sig')
+        } else {
+          arrow_df <- dplyr::left_join(arrow_df, envfit_df, by = c('Label' = 'factor'))
+          arrow_df <- dplyr::mutate(arrow_df, bold = ifelse(stringr::str_detect(sig, stringr::fixed('*')), 'sig', 'ns'))
+        }
+        # add arrow layers
+        p <- p +
+          geom_segment(
+            data = arrow_df,
+            aes(
+              x = 0,
+              y = 0,
+              xend = xend,
+              yend = yend,
+              size = bold,
+              color = bold,
+              linetype = bold
+            ),
+            arrow = arrow(length = unit(0.25, "cm"))
+          ) +
+          geom_text(
+            data = arrow_df,
+            aes(x = x_label, y = y_label, label = Label),
+            size = arrow_txt_size,
+            hjust = 0.5
+          )
+      }
+      # if bi_axes < 2, skip arrows gracefully
     }
-    ggplot(fmod, aes(x = RDA1, y = RDA2)) +
-      coord_fixed() +
-      geom_segment(
-        data = bplt_df,
-        # mult and RDA1/RDA2 are from fortified RDA data.frame
-        # they contain the direction and effects of every variabl
-        # their products are the direction and length of arrows
-        aes(
-          x = 0,
-          xend = mult * RDA1,
-          y = 0,
-          yend = mult * RDA2,
-          # Use different arrow size to indicate the significant level
-          size = bold,
-          # Use different arrow color to indicate the significant level
-          color = bold,
-          # Use different arrow linetype to indicate the significant level
-          linetype = bold
-        ),
-        #############################
-        # Q:Why use three different attibution to control the significant levels?
-        # It is redundancy, isn't it?
-        # A: In fact, it's not easy to recongize the significant level by one kind attribution
-        # Becasue it is not delicate to indicate it with supper bold and supper thin arrow,
-        # by the same logic, high contrast colors are not delicate neither.
-        # As for the line type, some arrow are really short, it's not easy to recognize
-        # weather it is solid or dashed line at all.
-        # To sum up, we use three different attributions
-        # to indicate the same difference to avoid any misleading.
-        #############################
-        # to control the size of the header of arrow
-        arrow = arrow(length = unit(0.25, "cm")),
-      ) +
-      # Add the text of variable name at the end of arrow
+
+    # species labels always
+    p +
       geom_text(
-        data =  subset(fmod, Score == "biplot"),
-        aes(
-          x = (mult + mult / 10) * RDA1,
-          #we add 10% to the text to push it slightly out from arrows
-          y = (mult + mult / 10) * RDA2,
-          label = Label
-        ),
-        size = arrow_txt_size,
-        #otherwise you could use hjust and vjust. I prefer this option
-        hjust = 0.5
-      ) +
-      # Add the text of species
-      geom_text(
-        data = subset(fmod, Score == "species"),
+        data = fmod_species,
         aes(colour = "species", label = Label),
         size = sp_size
       )

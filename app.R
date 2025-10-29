@@ -80,7 +80,7 @@ ui <- fluidPage(# Application title
                    step = 5000
                  ),
                  sliderInput(
-                   'envfit_p_max',
+                   'envfit_perm',
                    'Permutation times of individual variable significance detection (higher may be more stable and accurate, but will take more time)',
                    min = 999,
                    max = 9999,
@@ -176,7 +176,7 @@ server <- function(input, output) {
       read_csv('resource/data/df_com_smp.csv')
     } else {
       if (is.null(input$df_com)) {
-        return("")
+        return(NULL)
       } else {
         read_csv(input$df_com$datapath)
       }
@@ -188,7 +188,7 @@ server <- function(input, output) {
       read_csv('resource/data/df_env_smp.csv')
     } else {
       if (is.null(input$df_env)) {
-        return("")
+        return(NULL)
       } else {
         read_csv(input$df_env$datapath)
       }
@@ -204,12 +204,8 @@ server <- function(input, output) {
   #############################
   # Perform RDA without Section
   rct_rda_full <- reactive({
-    if (df_com() == "") {
-      return('Please Upload Species Matrice')
-    }
-    if (df_env() == "") {
-      return('Please Upload Environment Matrice')
-    }
+    req(df_com(), df_env())
+    ## Inputs are required above with req(); proceed to model fit
     ## Determine whether scale data or not,
     ## becasuse NA can't be scaled, once select scale,
     ## NA must be omit by na.action = na.omit
@@ -237,12 +233,7 @@ server <- function(input, output) {
   # Perform RDA with Selection
   rct_rda_selection <-
     reactive({
-      if (df_com() == "") {
-        return('Please Upload Species Matrice')
-      }
-      if (df_env() == "") {
-        return('Please Upload Environment Matrice')
-      }
+      req(df_com(), df_env())
       ## If the backwad was selected, there is only need the RDA with all variables
       ## The rct_rda_full() was enought to be selected.
       if (input$select_direction == 'backward') {
@@ -268,7 +259,7 @@ server <- function(input, output) {
             scale = TRUE
           ) %>%
             ordistep(
-              scope = formula(rct_rda_full()),
+              scope = rct_rda_full(),
               direction = input$select_direction,
               perm.max = input$selection_perm_max,
               trace = 0
@@ -277,7 +268,7 @@ server <- function(input, output) {
           rda(df_com() ~ 1,
               data = df_env()) %>%
             ordistep(
-              scope = formula(rct_rda_full()),
+              scope = rct_rda_full(),
               direction = input$select_direction,
               perm.max = input$selection_perm_max,
               trace = 0
@@ -296,14 +287,14 @@ server <- function(input, output) {
   # to detect the significant
   # environment variables
   ## Load envfit_to_df function
-  # source('Function/envfit_to_df.R')
+  source('R/envfit_to_df.R')
   
   ## ENVFIT to FULL Model
   rct_envfit_full <-
     reactive({
-      envfit(formula(rct_rda_full()),
-             data = df_env(),
-             p.max = input$envfit_p_max) %>%
+      envfit(ord = rct_rda_full(),
+             env = as.data.frame(df_env()),
+             permutations = input$envfit_perm) %>%
         envfit_to_df(r2_dig = 3)
     })
   
@@ -320,9 +311,9 @@ server <- function(input, output) {
   rct_envfit_selection <-
     reactive({
       envfit(
-        formula(rct_rda_selection()),
-        data = df_env(),
-        p.max = input$envfit_p_max
+        ord = rct_rda_selection(),
+        env = as.data.frame(df_env()),
+        permutations = input$envfit_perm
       ) %>%
         envfit_to_df(r2_dig = 3)
     })
@@ -338,7 +329,7 @@ server <- function(input, output) {
   ############################
   #Plot the figure of RDAs
   ## Load ggRDA function
-  # source('Function/ggRDA.R')
+  source('R/ggRDA.R')
   ## Plot the RDA figures
   rct_fig_rda_full <-
     reactive({
