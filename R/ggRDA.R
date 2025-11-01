@@ -4,8 +4,53 @@ ggRDA <-
            sp_size = 4,
            arrow_txt_size = 4,
            envfit_df) {
-    # fortify rda to data.frame
-    fmod <- ggvegan::fortify(rda_obj)
+    # 检查ggvegan包是否可用
+    if (!requireNamespace('ggvegan', quietly = TRUE)) {
+      # 如果ggvegan不可用，提供一个简单的替代方案
+      warning("ggvegan包不可用，使用基础vegan函数替代。某些可视化功能可能受限。")
+      
+      # 提取物种和环境变量分数
+      species_scores <- scores(rda_obj, display = "species", choices = c(1, 2))
+      site_scores <- scores(rda_obj, display = "sites", choices = c(1, 2))
+      biplot_scores <- tryCatch({
+        scores(rda_obj, display = "biplot", choices = c(1, 2))
+      }, error = function(e) {
+        NULL
+      })
+      
+      # 创建数据框
+      fmod <- data.frame()
+      
+      # 添加物种数据
+      if (!is.null(species_scores)) {
+        species_df <- as.data.frame(species_scores)
+        names(species_df) <- c("RDA1", "RDA2")
+        species_df$Score <- "species"
+        species_df$Label <- rownames(species_df)
+        fmod <- rbind(fmod, species_df)
+      }
+      
+      # 添加位点数据
+      if (!is.null(site_scores)) {
+        site_df <- as.data.frame(site_scores)
+        names(site_df) <- c("RDA1", "RDA2")
+        site_df$Score <- "sites"
+        site_df$Label <- rownames(site_df)
+        fmod <- rbind(fmod, site_df)
+      }
+      
+      # 添加双标图数据
+      if (!is.null(biplot_scores)) {
+        biplot_df <- as.data.frame(biplot_scores)
+        names(biplot_df) <- c("RDA1", "RDA2")
+        biplot_df$Score <- "biplot"
+        biplot_df$Label <- rownames(biplot_df)
+        fmod <- rbind(fmod, biplot_df)
+      }
+    } else {
+      # 如果ggvegan可用，使用它的fortify函数
+      fmod <- ggvegan::fortify(rda_obj)
+    }
     # initialize multiplier (will compute adaptively)
     mult <- 1
 
