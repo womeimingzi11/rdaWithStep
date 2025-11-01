@@ -5,10 +5,9 @@ ggRDA <-
            arrow_txt_size = 4,
            envfit_df) {
     # fortify rda to data.frame
-    fmod <- fortify(rda_obj)
-    # get biplot arrow multiplier
-    basplot <- plot(rda_obj)
-    mult <- attributes(basplot$biplot)$arrow.mul
+    fmod <- ggvegan::fortify(rda_obj)
+    # initialize multiplier (will compute adaptively)
+    mult <- 1
 
     # normalize column names
     if ("score" %in% names(fmod)) names(fmod)[names(fmod) == "score"] <- "Score"
@@ -36,6 +35,23 @@ ggRDA <-
       if (length(bi_axes) >= 2) {
         bi_axis1 <- bi_axes[1]
         bi_axis2 <- bi_axes[2]
+        # --- adaptive multiplier (synced with repro_ggRDA.R) ---
+        num_cols <- names(arrow_df)[vapply(arrow_df, is.numeric, logical(1))]
+        if (length(num_cols) >= 2) {
+          b1 <- num_cols[1]; b2 <- num_cols[2]
+          fnum_cols <- names(fmod_species)[vapply(fmod_species, is.numeric, logical(1))]
+          s1 <- fnum_cols[1]; s2 <- fnum_cols[2]
+          sp_rx <- max(abs(fmod_species[[s1]]), na.rm = TRUE)
+          sp_ry <- max(abs(fmod_species[[s2]]), na.rm = TRUE)
+          bp_rx <- max(abs(arrow_df[[b1]]), na.rm = TRUE)
+          bp_ry <- max(abs(arrow_df[[b2]]), na.rm = TRUE)
+          m_x <- if (bp_rx > 0) sp_rx / bp_rx else NA_real_
+          m_y <- if (bp_ry > 0) sp_ry / bp_ry else NA_real_
+          mult <- suppressWarnings(min(m_x, m_y, na.rm = TRUE))
+          if (!is.finite(mult) || is.na(mult)) mult <- 1
+        }
+        # --- end adaptive multiplier ---
+
         # compute arrow ends and label positions using biplot axes
         arrow_df$xend <- mult * arrow_df[[bi_axis1]]
         arrow_df$yend <- mult * arrow_df[[bi_axis2]]

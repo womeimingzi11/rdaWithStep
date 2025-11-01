@@ -233,48 +233,55 @@ server <- function(input, output) {
   # Perform RDA with Selection
   rct_rda_selection <-
     reactive({
+      # 确保数据可用
       req(df_com(), df_env())
-      ## If the backwad was selected, there is only need the RDA with all variables
-      ## The rct_rda_full() was enought to be selected.
-      if (input$select_direction == 'backward') {
-        rct_rda_full() %>%
-          ordistep(
-            direction = input$select_direction,
-            perm.max = input$selection_perm_max,
-            trace = 0
-          )
-        
-        ## For bothward selection and forward selection
-        ## We have to create a RDA model with no variable as predict varibale.
-        ## y ~ 1 is the formula for null model
-        ## ATTENTION: if your full model was scaled,
-        ## the same method was also needed to be used at creating null model.
-        ## Therefore, we should detect wether scale is needed or not.
-      } else {
-        if (input$rda_scale) {
-          rda(
-            df_com() ~ 1,
-            data = df_env(),
-            na.action = na.omit,
-            scale = TRUE
-          ) %>%
-            ordistep(
-              scope = rct_rda_full(),
-              direction = input$select_direction,
-              perm.max = input$selection_perm_max,
-              trace = 0
-            )
+      
+      # 提前获取数据并存储在全局环境中（这是一个变通方法）
+      # 注意：在生产环境中应该使用更优雅的解决方案
+      .GlobalEnv$.temp_com_data <- df_com()
+      .GlobalEnv$.temp_env_data <- df_env()
+      scale_option <- input$rda_scale
+      direction_option <- input$select_direction
+      perm_max_option <- input$selection_perm_max
+      
+      # 使用tryCatch来处理错误并清理全局环境
+      result <- tryCatch({
+        # 创建完整模型
+        if (scale_option) {
+          full_model <- rda(.temp_com_data ~ ., data = .temp_env_data, na.action = na.omit, scale = TRUE)
         } else {
-          rda(df_com() ~ 1,
-              data = df_env()) %>%
-            ordistep(
-              scope = rct_rda_full(),
-              direction = input$select_direction,
-              perm.max = input$selection_perm_max,
-              trace = 0
-            )
+          full_model <- rda(.temp_com_data ~ ., data = .temp_env_data, na.action = na.omit)
         }
-      }
+        
+        # 创建零模型
+        if (scale_option) {
+          null_model <- rda(.temp_com_data ~ 1, data = .temp_env_data, na.action = na.omit, scale = TRUE)
+        } else {
+          null_model <- rda(.temp_com_data ~ 1, data = .temp_env_data, na.action = na.omit)
+        }
+        
+        # 执行逐步选择
+        if (direction_option == 'backward') {
+          # 向后选择
+          ordistep(full_model, 
+                   direction = direction_option,
+                   perm.max = perm_max_option,
+                   trace = 0)
+        } else {
+          # 向前或双向选择
+          ordistep(null_model,
+                   scope = list(lower = formula(null_model), upper = formula(full_model)),
+                   direction = direction_option,
+                   perm.max = perm_max_option,
+                   trace = 0)
+        }
+      }, 
+      finally = {
+        # 清理全局环境中的临时数据
+        rm(.temp_com_data, .temp_env_data, envir = .GlobalEnv)
+      })
+      
+      return(result)
     })
   
   # Reveal the result of RDA with Selection
@@ -310,12 +317,23 @@ server <- function(input, output) {
   ## ENVFIT to SELECTED Model
   rct_envfit_selection <-
     reactive({
-      envfit(
-        ord = rct_rda_selection(),
-        env = as.data.frame(df_env()),
-        permutations = input$envfit_perm
+      # 确保所有必要的对象都可用
+      req(rct_rda_selection(), df_env())
+      
+      # 提前获取所有必要的数据，完全避免响应式函数的引用
+      rda_selection_result <- rct_rda_selection()
+      env_data <- df_env()
+      perm_value <- input$envfit_perm
+      
+      # 使用预保存的变量执行envfit
+      result <- envfit(
+        ord = rda_selection_result,
+        env = as.data.frame(env_data),
+        permutations = perm_value
       ) %>%
         envfit_to_df(r2_dig = 3)
+      
+      return(result)
     })
   output$envfit_selection <-
     renderDataTable({
@@ -333,9 +351,14 @@ server <- function(input, output) {
   ## Plot the RDA figures
   rct_fig_rda_full <-
     reactive({
+      # 提前获取所有必要的结果，避免多次调用
+      rda_full_result <- rct_rda_full()
+      envfit_full_result <- rct_envfit_full()
+      axes_explain_option <- input$axes_explain
+      
       p <-
-        ggRDA(rda_obj = rct_rda_full(),
-              envfit_df = rct_envfit_full(),
+        ggRDA(rda_obj = rda_full_result,
+              envfit_df = envfit_full_result,
               sp_size = 5) +
         # Generally theme_classic is a good choice to paint a figure
         theme_classic() +
@@ -354,11 +377,12 @@ server <- function(input, output) {
           'species' = 'red'
         )) +
         scale_linetype_manual(values = c('ns' = 8, 'sig' = 1))
-      if (input$axes_explain) {
+      if (axes_explain_option) {
+        # 使用保存的结果对象计算解释率，避免多次调用响应式函数
         exp_by_x <-
-          (as.list(rct_rda_full()$CCA$eig)$RDA1) / (rct_rda_full()$tot.chi) * 100
+          (as.list(rda_full_result$CCA$eig)$RDA1) / (rda_full_result$tot.chi) * 100
         exp_by_y <-
-          (as.list(rct_rda_full()$CCA$eig)$RDA2) / (rct_rda_full()$tot.chi) * 100
+          (as.list(rda_full_result$CCA$eig)$RDA2) / (rda_full_result$tot.chi) * 100
         p +
           xlab(paste('RDA1 (', round(exp_by_x, 2), '%)', sep = '')) +
           ylab(paste('RDA2 (', round(exp_by_y, 2), '%)', sep = ''))
@@ -373,9 +397,17 @@ server <- function(input, output) {
     renderPlot(rct_fig_rda_full())
   rct_fig_rda_selection <-
     reactive({
+      # 确保所有必要的对象都可用
+      req(rct_rda_selection(), rct_envfit_selection())
+      
+      # 提前获取所有必要的结果，完全避免响应式函数的引用
+      rda_selection_result <- rct_rda_selection()
+      envfit_result <- rct_envfit_selection()
+      axes_explain_option <- input$axes_explain
+      
       p <-
-        ggRDA(rda_obj = rct_rda_selection(),
-              envfit_df = rct_envfit_selection(),
+        ggRDA(rda_obj = rda_selection_result,
+              envfit_df = envfit_result,
               sp_size = 5) +
         # Generally theme_classic is a good choice to paint a figure
         theme_classic() +
@@ -395,10 +427,11 @@ server <- function(input, output) {
         )) +
         scale_linetype_manual(values = c('ns' = 8, 'sig' = 1))
       if (input$axes_explain) {
+        # 使用保存的结果对象计算解释率
         exp_by_x <-
-          (as.list(rct_rda_selection()$CCA$eig)$RDA1) / (rct_rda_selection()$tot.chi) * 100
+          (as.list(rda_selection_result$CCA$eig)$RDA1) / (rda_selection_result$tot.chi) * 100
         exp_by_y <-
-          (as.list(rct_rda_selection()$CCA$eig)$RDA2) / (rct_rda_selection()$tot.chi) * 100
+          (as.list(rda_selection_result$CCA$eig)$RDA2) / (rda_selection_result$tot.chi) * 100
         p +
           xlab(paste('RDA1 (', round(exp_by_x, 2), '%)', sep = '')) +
           ylab(paste('RDA2 (', round(exp_by_y, 2), '%)', sep = ''))

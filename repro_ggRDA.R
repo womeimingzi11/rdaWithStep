@@ -3,6 +3,7 @@ suppressPackageStartupMessages({
   library(tidyverse)
   library(vegan)
   library(ggplot2)
+  library(ggvegan)
 })
 
 # Source project functions
@@ -35,18 +36,33 @@ if (nrow(com_num) != nrow(env_num)) {
 rda_obj <- vegan::rda(com_num, env_num, scale = TRUE)
 
 # Diagnostics: fortify and biplot rows
-fmod <- fortify(rda_obj)
+fmod <- ggvegan::fortify(rda_obj)
 if ("score" %in% names(fmod)) names(fmod)[names(fmod) == "score"] <- "Score"
 if ("label" %in% names(fmod)) names(fmod)[names(fmod) == "label"] <- "Label"
 
 cat("fortify rows:", nrow(fmod), ", cols:", paste(names(fmod), collapse = ","), "\n")
 fmod_bp <- dplyr::filter(fmod, Score == "biplot")
+fmod_sp <- dplyr::filter(fmod, Score == "species")
 cat("biplot rows:", nrow(fmod_bp), ", bp cols:", paste(names(fmod_bp), collapse = ","), "\n")
 
-# Arrow multiplier (from base plot attributes)
-bplot <- plot(rda_obj)
-arrow_mul <- attributes(bplot$biplot)$arrow.mul
-cat("arrow.mul:", narrow_mul, "\n")
+# Adaptive arrow multiplier based on ranges (avoids NULL)
+num_cols <- names(fmod_bp)[vapply(fmod_bp, is.numeric, logical(1))]
+if (length(num_cols) >= 2) {
+  b1 <- num_cols[1]; b2 <- num_cols[2]
+  fnum_cols <- names(fmod_sp)[vapply(fmod_sp, is.numeric, logical(1))]
+  s1 <- fnum_cols[1]; s2 <- fnum_cols[2]
+  sp_rx <- max(abs(fmod_sp[[s1]]), na.rm = TRUE)
+  sp_ry <- max(abs(fmod_sp[[s2]]), na.rm = TRUE)
+  bp_rx <- max(abs(fmod_bp[[b1]]), na.rm = TRUE)
+  bp_ry <- max(abs(fmod_bp[[b2]]), na.rm = TRUE)
+  m_x <- if (bp_rx > 0) sp_rx / bp_rx else NA_real_
+  m_y <- if (bp_ry > 0) sp_ry / bp_ry else NA_real_
+  arrow_mul <- suppressWarnings(min(m_x, m_y, na.rm = TRUE))
+  if (!is.finite(arrow_mul) || is.na(arrow_mul)) arrow_mul <- 1
+} else {
+  arrow_mul <- 1
+}
+cat("arrow_mul (adaptive):", arrow_mul, "\n")
 
 # Envfit and df conversion
 fit <- vegan::envfit(rda_obj, env_num, permutations = 199)
