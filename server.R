@@ -3,7 +3,12 @@ server <- function(input, output) {
   ##############################
   # Reveal the data frame secton
   df_com <- reactive({
-    if (input$data_source == 'demo') {
+    if (input$data_source == 'iris_demo') {
+      # 使用iris数据集的花瓣和萼片测量值作为物种数据
+      iris_species_data <- iris[, 1:4]
+      return(iris_species_data)
+    } else if (input$data_source == 'original_demo') {
+      # 使用原始示例数据
       read_csv('resource/data/df_com_smp.csv')
     } else {
       if (is.null(input$df_com)) {
@@ -15,7 +20,17 @@ server <- function(input, output) {
   })
   
   df_env <- reactive({
-    if (input$data_source == 'demo') {
+    if (input$data_source == 'iris_demo') {
+      # 使用iris数据集的物种信息作为环境变量
+      # 将物种类别转换为数值变量
+      iris_env_data <- data.frame(
+        Species_setosa = as.numeric(iris$Species == 'setosa'),
+        Species_versicolor = as.numeric(iris$Species == 'versicolor'),
+        Species_virginica = as.numeric(iris$Species == 'virginica')
+      )
+      return(iris_env_data)
+    } else if (input$data_source == 'original_demo') {
+      # 使用原始示例数据
       read_csv('resource/data/df_env_smp.csv')
     } else {
       if (is.null(input$df_env)) {

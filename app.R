@@ -15,6 +15,7 @@
 library(shiny)
 library(shinythemes)
 library(DT)
+library("markdown")
 
 # Package for data manipulation
 library(tidyverse)

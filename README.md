@@ -64,12 +64,24 @@ At the least, click `Run App` at the right top of the code editor panel, **rdaWi
 
 ## Example Data
 
-The application comes with example data files that you can use to test the functionality:
+The application provides two demonstration datasets:
 
-* `df_com_smp.csv` - Example community/species data matrix
-* `df_env_smp.csv` - Example environmental variables data matrix
+### Iris Dataset
 
-These files are located in the `resource/data` directory and can be loaded directly in the app for demonstration purposes.
+* The iris dataset is a well-known multivariate dataset that contains measurements for 150 iris flowers from three different species (setosa, versicolor, and virginica).
+* For RDA analysis, we use the flower measurements (Sepal.Length, Sepal.Width, Petal.Length, Petal.Width) as species data.
+* The species information (setosa, versicolor, virginica) is converted to binary variables and used as environmental variables.
+
+This dataset is directly accessible in R without needing to load external files, making it an ideal example for demonstrating RDA analysis. When you select "Try the iris demo" in the application, the iris dataset will be automatically loaded.
+
+### Original Example Dataset
+
+The original example dataset is stored in CSV files in the `resource/data` directory:
+
+* `df_com_smp.csv`: Contains species data
+* `df_env_smp.csv`: Contains environmental variables
+
+When you select "Try the original demo" in the application, these files will be automatically loaded.
 
 ## Features
 - [x] Reveal Input Matrices

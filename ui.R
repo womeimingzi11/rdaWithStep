@@ -28,8 +28,9 @@ ui <- fluidPage(# Application title
                    'data_source',
                    'Upload files or try the demo',
                    choices = c('Upload files' = 'file',
-                               'Try the demo' = 'demo'),
-                   selected = 'demo'
+                               'Try the iris demo' = 'iris_demo',
+                               'Try the original demo' = 'original_demo'),
+                   selected = 'iris_demo'
                  ),
                  conditionalPanel(
                    condition = "input.data_source == 'file'",
