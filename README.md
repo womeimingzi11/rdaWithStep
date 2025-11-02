@@ -3,7 +3,7 @@ A shiny app to perform RDA with variable selection and create awesome figures an
 
 rdaWithStep is hosted at [Shinyapps.io](https://hanchen.shinyapps.io/rdaWithStep/).
 
-## Wha is RDA with step selection?
+## What is RDA with step selection?
 
 Briefly, the Monte Carlo permutation tests followed by backward, forward or bothward selection were used to determine which variable was contained in each variable set.
 
@@ -35,16 +35,44 @@ You are also welcomed to visit my [Blog (in Chinese)](https://womeimingzi11.gith
 ### 2. Hardcore way
 To make sure that you can control everything, you are welcomed to [fork my code](https://github.com/womeimingzi11/rdaWithStep/fork) to your own repo (and leave me a star please).
 
-Then what you can do is to oepn `rdaWithStep.Rproj` file in RStudio, following open `app.R` file, install all the packages which will be loaded.
+Then what you can do is to open `rdaWithStep.Rproj` file in RStudio, following open `app.R` file, install all the packages which will be loaded.
 
-At the least, click `run.app` at the right top of the code editor panel, **rdaWithStep** will run locally.
+### Required Packages
+
+The following packages are required to run rdaWithStep:
+
+* **Shiny packages**: shiny, shinythemes, DT
+* **Data manipulation**: tidyverse, vegan
+* **Visualization**: ggvegan (will be automatically installed if missing)
+
+You can install these packages with:
+
+```r
+# Install CRAN packages
+install.packages(c("shiny", "shinythemes", "DT", "tidyverse", "vegan"))
+
+# Install ggvegan from GitHub
+if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
+remotes::install_github("gavinsimpson/ggvegan")
+```
+
+At the least, click `Run App` at the right top of the code editor panel, **rdaWithStep** will run locally.
 
 ![](resource/figure/runApp.png)
 
 
 
+## Example Data
+
+The application comes with example data files that you can use to test the functionality:
+
+* `df_com_smp.csv` - Example community/species data matrix
+* `df_env_smp.csv` - Example environmental variables data matrix
+
+These files are located in the `resource/data` directory and can be loaded directly in the app for demonstration purposes.
+
 ## Features
-- [x] Reveal Input Matrice
+- [x] Reveal Input Matrices
 - [x] Perform RDA
   - [x] RDA without Selection
   - [x] RDA with Selection
@@ -52,9 +80,10 @@ At the least, click `run.app` at the right top of the code editor panel, **rdaWi
   - [x] Monte Carlo permutation test
   - [x] Significance Table
 - [x] RDA plot
+- [x] Export results as tables and figures
 
 ## Known Issues
-You tell me.
+If you encounter any issues, please report them in the [GitHub Issues](https://github.com/womeimingzi11/rdaWithStep/issues) section.
 
 ## Privacy Statements
-We gurantee that all your data won't be kept once you leave the Shiny app. There is no code and won't have any code to record your cilentID, uploaded file or any other data.
+We guarantee that all your data won't be kept once you leave the Shiny app. There is no code and won't have any code to record your clientID, uploaded files or any other data.
